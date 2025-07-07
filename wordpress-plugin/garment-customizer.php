@@ -81,6 +81,7 @@ class GarmentCustomizer {
     private function load_dependencies() {
         $required_files = array(
             'includes/custom-post-types.php',
+            'includes/meta-fields.php',
             'includes/rest-api.php',
             'includes/shopping-cart.php',
             'includes/request-for-quote.php',

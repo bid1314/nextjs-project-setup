@@ -40,22 +40,33 @@ function gc_register_garment_post_type() {
         'label'                 => __( 'Garment', 'garment-customizer' ),
         'description'           => __( 'Garment Customizer Products', 'garment-customizer' ),
         'labels'                => $labels,
-        'supports'              => array( 'title', 'thumbnail', 'custom-fields' ),
+        'supports'              => array( 'title', 'editor', 'thumbnail', 'custom-fields' ),
         'taxonomies'            => array(),
         'hierarchical'          => false,
         'public'                => true,
-        'show_ui'               => true,
-        'show_in_menu'          => false,
-        'menu_position'         => 5,
-        'menu_icon'             => 'dashicons-admin-appearance',
-        'show_in_admin_bar'     => true,
-        'show_in_nav_menus'     => true,
-        'can_export'            => true,
-        'has_archive'           => true,
-        'exclude_from_search'   => false,
-        'publicly_queryable'    => true,
-        'capability_type'       => 'post',
-        'show_in_rest'          => true,
+        'show_ui'              => true,
+        'show_in_menu'         => 'garment-customizer',
+        'menu_position'        => 5,
+        'menu_icon'            => 'dashicons-admin-appearance',
+        'show_in_admin_bar'    => true,
+        'show_in_nav_menus'    => true,
+        'can_export'           => true,
+        'has_archive'          => true,
+        'exclude_from_search'  => false,
+        'publicly_queryable'   => true,
+        'capability_type'      => 'post',
+        'show_in_rest'         => true,
+        'rest_base'            => 'garments',
+        'template'             => array(
+            array('core/heading', array(
+                'content' => 'Garment Details',
+                'level' => 2
+            )),
+            array('core/paragraph', array(
+                'placeholder' => 'Enter garment description...'
+            ))
+        ),
+        'template_lock'        => 'all',
     );
     register_post_type( 'garment', $args );
 }

@@ -1,0 +1,225 @@
+/* Garment Customizer Admin Styles */
+
+.gc-meta-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.gc-meta-section h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* Layers Management */
+#gc-layers-container {
+    margin-bottom: 15px;
+}
+
+.gc-layer-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.gc-layer-header {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    border-radius: 4px 4px 0 0;
+}
+
+.gc-layer-drag-handle {
+    cursor: move;
+    margin-right: 10px;
+    color: #666;
+}
+
+.gc-layer-name {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.gc-layer-type {
+    width: 120px;
+    margin-right: 10px;
+}
+
+.gc-layer-content {
+    padding: 15px;
+}
+
+.gc-layer-options {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.gc-layer-options label {
+    font-weight: 500;
+}
+
+/* Colors Management */
+#gc-colors-container {
+    margin-bottom: 15px;
+}
+
+.gc-color-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.gc-color-item .wp-picker-container {
+    flex: 1;
+}
+
+/* Buttons */
+.gc-add-layer,
+.gc-add-color {
+    margin-bottom: 15px;
+}
+
+.gc-remove-layer,
+.gc-remove-color {
+    background: #dc3545 !important;
+    color: #fff !important;
+    border-color: #dc3545 !important;
+}
+
+.gc-remove-layer:hover,
+.gc-remove-color:hover {
+    background: #c82333 !important;
+    border-color: #bd2130 !important;
+}
+
+/* Form Fields */
+.gc-meta-section input[type="text"],
+.gc-meta-section input[type="number"],
+.gc-meta-section select,
+.gc-meta-section textarea {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+.gc-meta-section input[type="number"] {
+    width: 100px;
+}
+
+/* WordPress Color Picker Adjustments */
+.wp-picker-container {
+    display: inline-block;
+}
+
+.wp-picker-container .wp-color-result.button {
+    margin-bottom: 0;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 782px) {
+    .gc-layer-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .gc-layer-name,
+    .gc-layer-type {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .gc-layer-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Loading States */
+.gc-loading {
+    position: relative;
+    min-height: 100px;
+}
+
+.gc-loading:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: gc-spin 1s linear infinite;
+}
+
+@keyframes gc-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltips */
+.gc-tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 5px;
+    color: #666;
+}
+
+.gc-tooltip:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background: #333;
+    color: #fff;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 3px;
+    z-index: 1000;
+}
+
+/* Error States */
+.gc-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.gc-error-field {
+    border-color: #dc3545 !important;
+}
+
+/* Success States */
+.gc-success {
+    color: #28a745;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Preview Area */
+.gc-preview {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.gc-preview img {
+    max-width: 100%;
+    height: auto;
+}

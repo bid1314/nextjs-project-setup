@@ -179,18 +179,62 @@ class GC_Admin_UI {
         $customization_state = get_post_meta( $post->ID, '_gc_customization_state', true );
 
         ?>
-        <p>
-            <label for="gc_layers"><?php esc_html_e( 'Layers (JSON)', 'garment-customizer' ); ?></label><br />
-            <textarea id="gc_layers" name="gc_layers" rows="6" class="large-text"><?php echo esc_textarea( $layers ); ?></textarea>
-        </p>
-        <p>
-            <label for="gc_colors"><?php esc_html_e( 'Colors (JSON)', 'garment-customizer' ); ?></label><br />
-            <textarea id="gc_colors" name="gc_colors" rows="6" class="large-text"><?php echo esc_textarea( $colors ); ?></textarea>
-        </p>
-        <p>
-            <label for="gc_customization_state"><?php esc_html_e( 'Customization State (JSON)', 'garment-customizer' ); ?></label><br />
-            <textarea id="gc_customization_state" name="gc_customization_state" rows="6" class="large-text"><?php echo esc_textarea( $customization_state ); ?></textarea>
-        </p>
+        <div class="gc-meta-section">
+            <h4><?php esc_html_e( 'Layers Management', 'garment-customizer' ); ?></h4>
+            <p class="description">
+                <?php esc_html_e( 'Define customizable layers for this garment. Drag to reorder.', 'garment-customizer' ); ?>
+            </p>
+            <div id="gc-layers-container"></div>
+            <button type="button" class="button gc-add-layer">
+                <?php esc_html_e( 'Add Layer', 'garment-customizer' ); ?>
+            </button>
+            <textarea 
+                id="gc_layers" 
+                name="gc_layers" 
+                style="display: none;"
+            ><?php echo esc_textarea( $layers ); ?></textarea>
+        </div>
+
+        <div class="gc-meta-section">
+            <h4><?php esc_html_e( 'Available Colors', 'garment-customizer' ); ?></h4>
+            <p class="description">
+                <?php esc_html_e( 'Define available colors for this garment.', 'garment-customizer' ); ?>
+            </p>
+            <div id="gc-colors-container"></div>
+            <button type="button" class="button gc-add-color">
+                <?php esc_html_e( 'Add Color', 'garment-customizer' ); ?>
+            </button>
+            <textarea 
+                id="gc_colors" 
+                name="gc_colors" 
+                style="display: none;"
+            ><?php echo esc_textarea( $colors ); ?></textarea>
+        </div>
+
+        <div class="gc-meta-section">
+            <h4><?php esc_html_e( 'Default Customization State', 'garment-customizer' ); ?></h4>
+            <p class="description">
+                <?php esc_html_e( 'Set the default customization state for this garment.', 'garment-customizer' ); ?>
+            </p>
+            <textarea 
+                id="gc_customization_state" 
+                name="gc_customization_state" 
+                class="large-text" 
+                rows="6"
+            ><?php echo esc_textarea( $customization_state ); ?></textarea>
+            <p class="description">
+                <?php esc_html_e( 'Enter a valid JSON object with customization defaults.', 'garment-customizer' ); ?>
+            </p>
+        </div>
+
+        <div class="gc-meta-section">
+            <h4><?php esc_html_e( 'Live Preview', 'garment-customizer' ); ?></h4>
+            <div class="gc-preview">
+                <div id="gc-preview-container">
+                    <?php esc_html_e( 'Preview will be shown here as you configure layers and colors.', 'garment-customizer' ); ?>
+                </div>
+            </div>
+        </div>
         <?php
     }
 
@@ -240,10 +284,53 @@ class GC_Admin_UI {
     }
 
     public function enqueue_admin_assets( $hook ) {
-        if ( strpos( $hook, 'gc-garment-customizer' ) !== false || strpos( $hook, 'gc-add-new-garment' ) !== false || strpos( $hook, 'rfq' ) !== false || strpos( $hook, 'gc-settings' ) !== false ) {
-            wp_enqueue_style( 'gc-admin-style', GC_PLUGIN_URL . 'assets/css/admin.css', array(), GC_PLUGIN_VERSION );
-            wp_enqueue_script( 'gc-admin-script', GC_PLUGIN_URL . 'assets/js/customizer.jsx', array( 'wp-element', 'wp-components', 'wp-i18n', 'wp-api' ), GC_PLUGIN_VERSION, true );
+        // Only load on garment post type screens and our custom admin pages
+        if ( 'post.php' !== $hook && 'post-new.php' !== $hook && 
+             strpos( $hook, 'gc-' ) === false ) {
+            return;
         }
+
+        global $post_type;
+        if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
+            if ( 'garment' !== $post_type ) {
+                return;
+            }
+        }
+
+        // Enqueue WordPress color picker
+        wp_enqueue_style( 'wp-color-picker' );
+        wp_enqueue_script( 'wp-color-picker' );
+
+        // Enqueue jQuery UI for sortable functionality
+        wp_enqueue_script( 'jquery-ui-sortable' );
+
+        // Enqueue our custom admin styles and scripts
+        wp_enqueue_style( 
+            'gc-admin-style', 
+            GC_PLUGIN_URL . 'assets/css/admin.css', 
+            array( 'wp-color-picker' ), 
+            GC_PLUGIN_VERSION 
+        );
+        
+        wp_enqueue_script( 
+            'gc-admin-script', 
+            GC_PLUGIN_URL . 'assets/js/admin.js', 
+            array( 'jquery', 'wp-color-picker', 'jquery-ui-sortable' ), 
+            GC_PLUGIN_VERSION, 
+            true 
+        );
+
+        // Pass data to our script
+        wp_localize_script( 'gc-admin-script', 'gcAdmin', array(
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'gc_admin_nonce' ),
+            'strings' => array(
+                'confirmDelete' => __( 'Are you sure you want to delete this item?', 'garment-customizer' ),
+                'savingChanges' => __( 'Saving changes...', 'garment-customizer' ),
+                'changesSaved' => __( 'Changes saved successfully.', 'garment-customizer' ),
+                'errorSaving' => __( 'Error saving changes.', 'garment-customizer' ),
+            )
+        ));
     }
 }
 
