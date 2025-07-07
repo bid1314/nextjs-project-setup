@@ -459,6 +459,70 @@ class GarmentCustomizer {
         
         return $sanitized;
     }
+
+    /**
+     * Create required pages for the customizer
+     */
+    public function create_customizer_pages() {
+        // Create Shop page if it doesn't exist
+        $shop_page = get_page_by_path('garment-shop');
+        if (!$shop_page) {
+            wp_insert_post(
+                array(
+                    'post_title'     => esc_html__('Garment Shop', 'garment-customizer'),
+                    'post_content'   => '[garment_customizer_shop]',
+                    'post_status'    => 'publish',
+                    'post_type'      => 'page',
+                    'post_name'      => 'garment-shop'
+                )
+            );
+        }
+
+        // Create Customizer page if it doesn't exist
+        $customizer_page = get_page_by_path('garment-customizer');
+        if (!$customizer_page) {
+            wp_insert_post(
+                array(
+                    'post_title'     => esc_html__('Customize Garment', 'garment-customizer'),
+                    'post_content'   => '[garment_customizer]',
+                    'post_status'    => 'publish',
+                    'post_type'      => 'page',
+                    'post_name'      => 'garment-customizer'
+                )
+            );
+        }
+
+        // Create Cart page if it doesn't exist
+        $cart_page = get_page_by_path('garment-cart');
+        if (!$cart_page) {
+            wp_insert_post(
+                array(
+                    'post_title'     => esc_html__('Shopping Cart', 'garment-customizer'),
+                    'post_content'   => '[garment_customizer_cart]',
+                    'post_status'    => 'publish',
+                    'post_type'      => 'page',
+                    'post_name'      => 'garment-cart'
+                )
+            );
+        }
+
+        // Create Request for Quote page if it doesn't exist
+        $rfq_page = get_page_by_path('request-quote');
+        if (!$rfq_page) {
+            wp_insert_post(
+                array(
+                    'post_title'     => esc_html__('Request for Quote', 'garment-customizer'),
+                    'post_content'   => '[garment_customizer_rfq]',
+                    'post_status'    => 'publish',
+                    'post_type'      => 'page',
+                    'post_name'      => 'request-quote'
+                )
+            );
+        }
+
+        // Flush rewrite rules to ensure new pages are accessible
+        flush_rewrite_rules();
+    }
     
     /**
      * AJAX handler for getting garments

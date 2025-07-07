@@ -17,7 +17,25 @@ function gc_register_garment_meta_fields() {
         'type' => 'array',
         'description' => 'Garment customization layers',
         'single' => true,
-        'show_in_rest' => true,
+        'show_in_rest' => array(
+            'schema' => array(
+                'type' => 'array',
+                'items' => array(
+                    'type' => 'object',
+                    'properties' => array(
+                        'name' => array(
+                            'type' => 'string',
+                            'required' => true
+                        ),
+                        'type' => array(
+                            'type' => 'string',
+                            'enum' => array('color', 'text', 'logo'),
+                            'required' => true
+                        )
+                    )
+                )
+            )
+        ),
         'default' => array(),
     ));
 
@@ -26,7 +44,14 @@ function gc_register_garment_meta_fields() {
         'type' => 'array',
         'description' => 'Available colors for the garment',
         'single' => true,
-        'show_in_rest' => true,
+        'show_in_rest' => array(
+            'schema' => array(
+                'type' => 'array',
+                'items' => array(
+                    'type' => 'string'
+                )
+            )
+        ),
         'default' => array(),
     ));
 

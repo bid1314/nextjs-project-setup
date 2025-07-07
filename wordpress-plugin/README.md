@@ -1,4 +1,4 @@
-# Garment Customizer WordPress Plugin
+      # Garment Customizer WordPress Plugin
 
 A comprehensive WordPress plugin that allows users to customize garments with layers, colors, logos, and text. Features include live preview, shopping cart functionality, and request for quote (RFQ) system.
 
