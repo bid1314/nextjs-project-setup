@@ -62,25 +62,108 @@ function gc_register_rest_routes() {
 add_action('rest_api_init', 'gc_register_rest_routes');
 
 /**
- * Get customizations for a garment
+ * Validate logo content using Open Router API
  *
  * @param WP_REST_Request $request Request object
  * @return WP_REST_Response
  */
-function gc_get_customizations($request) {
-    $garment_id = $request->get_param('id');
-    $customizations = get_post_meta($garment_id, 'gc_customizations', true);
-
-    if (!$customizations) {
+function gc_validate_logo($request) {
+    if (empty($_FILES['logo'])) {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => __('No customizations found.', 'garment-customizer')
-        ), 404);
+            'message' => __('No logo file uploaded.', 'garment-customizer')
+        ), 400);
+    }
+
+    $logo_file = $_FILES['logo'];
+
+    // Validate file size and type
+    $max_size = 5 * 1024 * 1024; // 5MB
+    $allowed_types = array('image/jpeg', 'image/png', 'image/gif', 'image/svg+xml');
+
+    if ($logo_file['size'] > $max_size) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Logo file size exceeds the maximum allowed size.', 'garment-customizer')
+        ), 400);
+    }
+
+    if (!in_array($logo_file['type'], $allowed_types)) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Unsupported logo file type.', 'garment-customizer')
+        ), 400);
+    }
+
+    // Read file content
+    $file_content = file_get_contents($logo_file['tmp_name']);
+    $base64_logo = base64_encode($file_content);
+
+    // Prepare Open Router API request
+    $api_key = get_option('gc_open_router_api_key');
+    if (!$api_key) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Open Router API key is not configured.', 'garment-customizer')
+        ), 500);
+    }
+
+    $endpoint = 'https://api.openrouter.ai/v1/chat/completions';
+    $headers = array(
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $api_key
+    );
+
+    $body = json_encode(array(
+        'model' => 'gpt-4o-mini',
+        'messages' => array(
+            array(
+                'role' => 'system',
+                'content' => 'You are a content safety checker for logos.'
+            ),
+            array(
+                'role' => 'user',
+                'content' => 'Check the following base64 encoded logo for inappropriate content: ' . $base64_logo
+            )
+        )
+    ));
+
+    $response = wp_remote_post($endpoint, array(
+        'headers' => $headers,
+        'body' => $body,
+        'timeout' => 15
+    ));
+
+    if (is_wp_error($response)) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Failed to connect to Open Router API.', 'garment-customizer')
+        ), 500);
+    }
+
+    $response_body = wp_remote_retrieve_body($response);
+    $data = json_decode($response_body, true);
+
+    if (empty($data['choices'][0]['message']['content'])) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Invalid response from Open Router API.', 'garment-customizer')
+        ), 500);
+    }
+
+    $result = strtolower($data['choices'][0]['message']['content']);
+    $is_safe = strpos($result, 'safe') !== false;
+
+    if (!$is_safe) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Logo content is not safe.', 'garment-customizer')
+        ), 400);
     }
 
     return new WP_REST_Response(array(
         'success' => true,
-        'data' => $customizations
+        'message' => __('Logo content is safe.', 'garment-customizer')
     ), 200);
 }
 
@@ -134,18 +217,10 @@ function gc_add_to_cart($request) {
         ), 400);
     }
 
-    // Generate unique cart item key
-    $cart_item_key = gc_generate_cart_item_key($garment_id, $customizations);
+    // Add item to custom cart
+    $cart_item_key = gc_add_item_to_cart($garment_id, $customizations, $quantity);
 
-    // Add to cart
-    $cart_item_data = array(
-        'gc_customizations' => $customizations,
-        'unique_key' => $cart_item_key,
-    );
-
-    $cart_item_id = WC()->cart->add_to_cart($garment_id, $quantity, 0, array(), $cart_item_data);
-
-    if (!$cart_item_id) {
+    if (!$cart_item_key) {
         return new WP_REST_Response(array(
             'success' => false,
             'message' => __('Failed to add item to cart.', 'garment-customizer')
@@ -156,8 +231,62 @@ function gc_add_to_cart($request) {
         'success' => true,
         'message' => __('Item added to cart successfully.', 'garment-customizer'),
         'data' => array(
-            'cart_url' => wc_get_cart_url()
+            'cart_url' => wc_get_cart_url() // This should be updated to custom cart page URL
         )
+    ), 200);
+}
+
+/**
+ * Get cart items
+ *
+ * @param WP_REST_Request $request Request object
+ * @return WP_REST_Response
+ */
+function gc_get_cart_items($request) {
+    $items = gc_get_cart_items();
+
+    return new WP_REST_Response(array(
+        'success' => true,
+        'data' => $items
+    ), 200);
+}
+
+/**
+ * Remove item from cart
+ *
+ * @param WP_REST_Request $request Request object
+ * @return WP_REST_Response
+ */
+function gc_remove_cart_item($request) {
+    $cart_item_key = $request->get_param('cart_item_key');
+
+    if (!$cart_item_key) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Invalid cart item key.', 'garment-customizer')
+        ), 400);
+    }
+
+    gc_remove_cart_item($cart_item_key);
+
+    return new WP_REST_Response(array(
+        'success' => true,
+        'message' => __('Item removed from cart.', 'garment-customizer')
+    ), 200);
+}
+
+/**
+ * Clear cart
+ *
+ * @param WP_REST_Request $request Request object
+ * @return WP_REST_Response
+ */
+function gc_clear_cart($request) {
+    gc_clear_cart();
+
+    return new WP_REST_Response(array(
+        'success' => true,
+        'message' => __('Cart cleared.', 'garment-customizer')
     ), 200);
 }
 
