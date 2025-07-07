@@ -1,0 +1,15 @@
+{
+  "core": null,
+  "plugins": [
+    "./wordpress-site/wp-content/plugins/garment-customizer"
+  ],
+  "themes": [],
+  "port": 8881,
+  "env": {
+    "development": {
+      "plugins": [
+        "./wordpress-site/wp-content/plugins/garment-customizer"
+      ]
+    }
+  }
+}
