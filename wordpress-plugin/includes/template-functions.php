@@ -30,13 +30,13 @@ function gc_get_template_part($slug, $name = '', $args = array()) {
     }
 
     // Get default slug-name.php
-    if (!$template && $name && file_exists(GC_PLUGIN_PATH . "templates/{$slug}-{$name}.php")) {
-        $template = GC_PLUGIN_PATH . "templates/{$slug}-{$name}.php";
+    if (!$template && $name && file_exists(dirname(dirname(__FILE__)) . "/templates/{$slug}-{$name}.php")) {
+        $template = dirname(dirname(__FILE__)) . "/templates/{$slug}-{$name}.php";
     }
 
     // If template file doesn't exist, look for the slug.php
-    if (!$template && !$name && file_exists(GC_PLUGIN_PATH . "templates/{$slug}.php")) {
-        $template = GC_PLUGIN_PATH . "templates/{$slug}.php";
+    if (!$template && file_exists(dirname(dirname(__FILE__)) . "/templates/{$slug}.php")) {
+        $template = dirname(dirname(__FILE__)) . "/templates/{$slug}.php";
     }
 
     // Allow 3rd party plugins to filter template file from their plugin
@@ -91,7 +91,7 @@ function gc_locate_template($template_name, $template_path = '', $default_path =
     }
 
     if (!$default_path) {
-        $default_path = GC_PLUGIN_PATH . 'templates/';
+        $default_path = dirname(dirname(__FILE__)) . '/templates/';
     }
 
     // Look within passed path within the theme - this is priority

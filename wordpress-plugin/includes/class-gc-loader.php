@@ -46,6 +46,7 @@ class GC_Loader {
         $this->define('GC_PLUGIN_DIR', plugin_dir_path(dirname(dirname(__FILE__))));
         $this->define('GC_PLUGIN_URL', plugin_dir_url(dirname(dirname(__FILE__))));
         $this->define('GC_PLUGIN_BASENAME', plugin_basename(GC_PLUGIN_FILE));
+        $this->define('GC_PLUGIN_PATH', dirname(dirname(__FILE__)) . '/');
     }
 
     /**
@@ -73,6 +74,7 @@ class GC_Loader {
         // Features
         include_once GC_PLUGIN_DIR . 'includes/rest-api.php';
         include_once GC_PLUGIN_DIR . 'includes/shopping-cart.php';
+        include_once GC_PLUGIN_DIR . 'includes/custom-cart.php';
         include_once GC_PLUGIN_DIR . 'includes/request-for-quote.php';
 
         // Admin

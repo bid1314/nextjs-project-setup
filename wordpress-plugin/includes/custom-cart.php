@@ -117,4 +117,47 @@ function gc_calculate_cart_total() {
 
     return $total;
 }
+
+/**
+ * Generate cart item key
+ *
+ * @param int   $product_id Product ID
+ * @param array $customizations Customization data
+ * @return string
+ */
+function gc_generate_cart_item_key($product_id, $customizations) {
+    return md5(serialize(array(
+        'product_id' => $product_id,
+        'customizations' => $customizations
+    )));
+}
+
+/**
+ * Update cart item quantity
+ *
+ * @param string $cart_item_key Cart item key
+ * @param int    $quantity      New quantity
+ */
+function gc_update_cart_item_quantity($cart_item_key, $quantity) {
+    gc_init_cart_session();
+    if (isset($_SESSION['gc_cart'][$cart_item_key])) {
+        $_SESSION['gc_cart'][$cart_item_key]['quantity'] = $quantity;
+    }
+}
+
+/**
+ * Get cart item count
+ *
+ * @return int
+ */
+function gc_get_cart_item_count() {
+    $count = 0;
+    $items = gc_get_cart_items();
+    
+    foreach ($items as $item) {
+        $count += $item['quantity'];
+    }
+    
+    return $count;
+}
 ?>

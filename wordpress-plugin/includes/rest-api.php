@@ -151,19 +151,55 @@ function gc_validate_logo($request) {
         ), 500);
     }
 
-    $result = strtolower($data['choices'][0]['message']['content']);
-    $is_safe = strpos($result, 'safe') !== false;
-
-    if (!$is_safe) {
-        return new WP_REST_Response(array(
-            'success' => false,
-            'message' => __('Logo content is not safe.', 'garment-customizer')
-        ), 400);
-    }
+    $content = $data['choices'][0]['message']['content'];
+    $is_safe = stripos($content, 'inappropriate') === false;
 
     return new WP_REST_Response(array(
         'success' => true,
-        'message' => __('Logo content is safe.', 'garment-customizer')
+        'safe' => $is_safe,
+        'message' => $is_safe ? __('Logo is safe to use.', 'garment-customizer') : __('Logo contains inappropriate content.', 'garment-customizer')
+    ), 200);
+}
+
+/**
+ * Get customizations for a garment
+ *
+ * @param WP_REST_Request $request Request object
+ * @return WP_REST_Response
+ */
+function gc_get_customizations($request) {
+    $garment_id = $request->get_param('id');
+    
+    if (!$garment_id) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Garment ID is required.', 'garment-customizer')
+        ), 400);
+    }
+
+    $garment = get_post($garment_id);
+    if (!$garment || $garment->post_type !== 'garment') {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Garment not found.', 'garment-customizer')
+        ), 404);
+    }
+
+    $customizations = get_post_meta($garment_id, 'gc_layers', true) ?: array();
+    $base_image = get_post_meta($garment_id, 'gc_base_image', true);
+    $available_sizes = get_post_meta($garment_id, 'gc_available_sizes', true) ?: array();
+    $default_color = get_post_meta($garment_id, 'gc_default_color', true);
+
+    return new WP_REST_Response(array(
+        'success' => true,
+        'data' => array(
+            'garment_id' => $garment_id,
+            'title' => get_the_title($garment_id),
+            'base_image' => $base_image,
+            'available_sizes' => $available_sizes,
+            'default_color' => $default_color,
+            'customizations' => $customizations
+        )
     ), 200);
 }
 
@@ -176,21 +212,31 @@ function gc_validate_logo($request) {
 function gc_save_customizations($request) {
     $garment_id = $request->get_param('id');
     $customizations = $request->get_param('customizations');
-
-    if (!$customizations) {
+    
+    if (!$garment_id) {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => __('No customization data provided.', 'garment-customizer')
+            'message' => __('Garment ID is required.', 'garment-customizer')
         ), 400);
     }
 
-    $result = update_post_meta($garment_id, 'gc_customizations', $customizations);
-
-    if (!$result) {
+    $garment = get_post($garment_id);
+    if (!$garment || $garment->post_type !== 'garment') {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => __('Failed to save customizations.', 'garment-customizer')
-        ), 500);
+            'message' => __('Garment not found.', 'garment-customizer')
+        ), 404);
+    }
+
+    // Save customizations to session or user meta
+    if (is_user_logged_in()) {
+        update_user_meta(get_current_user_id(), "gc_customizations_{$garment_id}", $customizations);
+    } else {
+        // Save to session
+        if (!session_id()) {
+            session_start();
+        }
+        $_SESSION["gc_customizations_{$garment_id}"] = $customizations;
     }
 
     return new WP_REST_Response(array(
@@ -200,7 +246,7 @@ function gc_save_customizations($request) {
 }
 
 /**
- * Add customized garment to cart
+ * Add item to cart
  *
  * @param WP_REST_Request $request Request object
  * @return WP_REST_Response
@@ -209,18 +255,18 @@ function gc_add_to_cart($request) {
     $garment_id = $request->get_param('garment_id');
     $customizations = $request->get_param('customizations');
     $quantity = $request->get_param('quantity') ?: 1;
-
+    
     if (!$garment_id || !$customizations) {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => __('Invalid request data.', 'garment-customizer')
+            'message' => __('Garment ID and customizations are required.', 'garment-customizer')
         ), 400);
     }
 
-    // Add item to custom cart
-    $cart_item_key = gc_add_item_to_cart($garment_id, $customizations, $quantity);
-
-    if (!$cart_item_key) {
+    // Add to cart
+    $cart_key = gc_add_item_to_cart($garment_id, $customizations, $quantity);
+    
+    if (!$cart_key) {
         return new WP_REST_Response(array(
             'success' => false,
             'message' => __('Failed to add item to cart.', 'garment-customizer')
@@ -230,68 +276,13 @@ function gc_add_to_cart($request) {
     return new WP_REST_Response(array(
         'success' => true,
         'message' => __('Item added to cart successfully.', 'garment-customizer'),
-        'data' => array(
-            'cart_url' => wc_get_cart_url() // This should be updated to custom cart page URL
-        )
+        'cart_key' => $cart_key,
+        'cart_count' => gc_get_cart_item_count()
     ), 200);
 }
 
 /**
- * Get cart items
- *
- * @param WP_REST_Request $request Request object
- * @return WP_REST_Response
- */
-function gc_get_cart_items($request) {
-    $items = gc_get_cart_items();
-
-    return new WP_REST_Response(array(
-        'success' => true,
-        'data' => $items
-    ), 200);
-}
-
-/**
- * Remove item from cart
- *
- * @param WP_REST_Request $request Request object
- * @return WP_REST_Response
- */
-function gc_remove_cart_item($request) {
-    $cart_item_key = $request->get_param('cart_item_key');
-
-    if (!$cart_item_key) {
-        return new WP_REST_Response(array(
-            'success' => false,
-            'message' => __('Invalid cart item key.', 'garment-customizer')
-        ), 400);
-    }
-
-    gc_remove_cart_item($cart_item_key);
-
-    return new WP_REST_Response(array(
-        'success' => true,
-        'message' => __('Item removed from cart.', 'garment-customizer')
-    ), 200);
-}
-
-/**
- * Clear cart
- *
- * @param WP_REST_Request $request Request object
- * @return WP_REST_Response
- */
-function gc_clear_cart($request) {
-    gc_clear_cart();
-
-    return new WP_REST_Response(array(
-        'success' => true,
-        'message' => __('Cart cleared.', 'garment-customizer')
-    ), 200);
-}
-
-/**
- * Request quote for customized garment
+ * Request a quote
  *
  * @param WP_REST_Request $request Request object
  * @return WP_REST_Response
@@ -300,31 +291,25 @@ function gc_request_quote($request) {
     $garment_id = $request->get_param('garment_id');
     $customizations = $request->get_param('customizations');
     $customer_data = $request->get_param('customer');
-
+    
     if (!$garment_id || !$customizations || !$customer_data) {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => __('Invalid request data.', 'garment-customizer')
+            'message' => __('All fields are required.', 'garment-customizer')
         ), 400);
     }
 
-    // Create quote request post
-    $quote_data = array(
-        'post_title' => sprintf(
-            __('Quote Request for %s', 'garment-customizer'),
-            get_the_title($garment_id)
-        ),
-        'post_type' => 'gc_quote',
-        'post_status' => 'publish',
-        'meta_input' => array(
-            'gc_garment_id' => $garment_id,
-            'gc_customizations' => $customizations,
-            'gc_customer_data' => $customer_data
-        )
-    );
+    // Validate customer data
+    if (empty($customer_data['name']) || empty($customer_data['email'])) {
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => __('Name and email are required.', 'garment-customizer')
+        ), 400);
+    }
 
-    $quote_id = wp_insert_post($quote_data);
-
+    // Create quote
+    $quote_id = gc_create_quote($garment_id, $customizations, $customer_data);
+    
     if (!$quote_id || is_wp_error($quote_id)) {
         return new WP_REST_Response(array(
             'success' => false,
@@ -332,78 +317,62 @@ function gc_request_quote($request) {
         ), 500);
     }
 
-    // Send notification emails
+    // Send notifications
     gc_send_quote_notifications($quote_id);
 
     return new WP_REST_Response(array(
         'success' => true,
         'message' => __('Quote request submitted successfully.', 'garment-customizer'),
-        'data' => array(
-            'quote_id' => $quote_id,
-            'quote_url' => get_permalink($quote_id)
-        )
+        'quote_id' => $quote_id
     ), 200);
 }
 
 /**
- * Generate unique cart item key
+ * Send quote notifications
  *
- * @param int   $garment_id Garment post ID
- * @param array $customizations Customization data
- * @return string
- */
-function gc_generate_cart_item_key($garment_id, $customizations) {
-    return md5($garment_id . serialize($customizations));
-}
-
-/**
- * Send quote request notifications
- *
- * @param int $quote_id Quote post ID
+ * @param int $quote_id Quote ID
  */
 function gc_send_quote_notifications($quote_id) {
     $quote = get_post($quote_id);
+    if (!$quote) {
+        return;
+    }
+
     $customer_data = get_post_meta($quote_id, 'gc_customer_data', true);
     $garment_id = get_post_meta($quote_id, 'gc_garment_id', true);
+    $customizations = get_post_meta($quote_id, 'gc_customizations', true);
 
-    // Send customer email
-    $to = $customer_data['email'];
-    $subject = sprintf(
-        __('Your Quote Request for %s', 'garment-customizer'),
-        get_the_title($garment_id)
-    );
-    
-    $message = gc_get_quote_email_content($quote_id, 'customer');
-    
-    wp_mail($to, $subject, $message, array('Content-Type: text/html; charset=UTF-8'));
-
-    // Send admin notification
+    // Send email to admin
     $admin_email = get_option('admin_email');
-    $admin_subject = sprintf(
-        __('New Quote Request: %s', 'garment-customizer'),
+    $subject = sprintf(__('New Quote Request - %s', 'garment-customizer'), get_the_title($garment_id));
+    
+    $message = sprintf(
+        __('A new quote request has been submitted for %s.', 'garment-customizer'),
         get_the_title($garment_id)
     );
+    $message .= "\n\n";
+    $message .= __('Customer Details:', 'garment-customizer') . "\n";
+    $message .= __('Name:', 'garment-customizer') . ' ' . $customer_data['name'] . "\n";
+    $message .= __('Email:', 'garment-customizer') . ' ' . $customer_data['email'] . "\n";
     
-    $admin_message = gc_get_quote_email_content($quote_id, 'admin');
-    
-    wp_mail($admin_email, $admin_subject, $admin_message, array('Content-Type: text/html; charset=UTF-8'));
-}
-
-/**
- * Get quote email content
- *
- * @param int    $quote_id Quote post ID
- * @param string $type Email type (customer or admin)
- * @return string
- */
-function gc_get_quote_email_content($quote_id, $type = 'customer') {
-    ob_start();
-    
-    if ($type === 'customer') {
-        gc_get_template('emails/customer-quote.php', array('quote_id' => $quote_id));
-    } else {
-        gc_get_template('emails/admin-quote.php', array('quote_id' => $quote_id));
+    if (!empty($customer_data['phone'])) {
+        $message .= __('Phone:', 'garment-customizer') . ' ' . $customer_data['phone'] . "\n";
     }
     
-    return ob_get_clean();
+    if (!empty($customer_data['message'])) {
+        $message .= __('Message:', 'garment-customizer') . "\n" . $customer_data['message'] . "\n";
+    }
+    
+    $message .= "\n" . __('View Quote:', 'garment-customizer') . ' ' . get_edit_post_link($quote_id);
+
+    wp_mail($admin_email, $subject, $message);
+
+    // Send confirmation email to customer
+    $customer_subject = sprintf(__('Quote Request Confirmation - %s', 'garment-customizer'), get_bloginfo('name'));
+    $customer_message = sprintf(
+        __('Thank you for your quote request for %s. We will review your request and get back to you soon.', 'garment-customizer'),
+        get_the_title($garment_id)
+    );
+
+    wp_mail($customer_data['email'], $customer_subject, $customer_message);
 }
