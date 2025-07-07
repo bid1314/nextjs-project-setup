@@ -1,0 +1,265 @@
+/* Customizer Container */
+.gc-customizer-container {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem auto;
+    max-width: 1200px;
+}
+
+/* Preview Section */
+.gc-preview-section {
+    flex: 1;
+    min-height: 500px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+    background: #f5f5f5;
+}
+
+.gc-preview-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Layer Styles */
+.gc-layer {
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    cursor: move;
+    background: transparent;
+}
+
+.gc-text-layer {
+    padding: 10px;
+    min-width: 100px;
+    min-height: 30px;
+    outline: none;
+    border: 1px dashed transparent;
+}
+
+.gc-text-layer:focus {
+    border-color: #2196F3;
+}
+
+.gc-logo-layer {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Controls Section */
+.gc-controls-section {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.gc-panel {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.gc-panel h3 {
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ddd;
+    font-size: 1.2rem;
+}
+
+/* Layer Controls */
+.gc-layer-control {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.gc-layer-name {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+/* Color Picker */
+.gc-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.gc-color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #ddd;
+    transition: transform 0.2s ease;
+}
+
+.gc-color-option:hover {
+    transform: scale(1.1);
+}
+
+.gc-color-option.active {
+    border-color: #2196F3;
+}
+
+/* Text Controls */
+.gc-text-input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.gc-text-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.gc-font-family {
+    flex: 1;
+    min-width: 120px;
+}
+
+.gc-font-size {
+    width: 60px;
+}
+
+.gc-text-align {
+    display: flex;
+    gap: 2px;
+}
+
+.gc-text-align button {
+    padding: 4px 8px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.gc-text-align button.active {
+    background: #2196F3;
+    color: white;
+    border-color: #1976D2;
+}
+
+/* Logo Upload */
+.gc-logo-upload {
+    margin-top: 0.5rem;
+}
+
+.gc-logo-input {
+    display: none;
+}
+
+.gc-upload-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.gc-upload-btn:hover {
+    background: #e0e0e0;
+}
+
+/* Price Panel */
+.gc-price-panel {
+    text-align: center;
+}
+
+.gc-price {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.gc-price-amount {
+    font-weight: bold;
+    color: #2196F3;
+}
+
+.gc-add-to-cart,
+.gc-request-quote {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.gc-add-to-cart {
+    background: #4CAF50;
+    color: white;
+}
+
+.gc-add-to-cart:hover {
+    background: #43A047;
+}
+
+.gc-request-quote {
+    background: #2196F3;
+    color: white;
+}
+
+.gc-request-quote:hover {
+    background: #1976D2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .gc-customizer-container {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .gc-controls-section {
+        width: 100%;
+    }
+
+    .gc-preview-section {
+        min-height: 400px;
+    }
+}
+
+/* UI Resizable Handles */
+.ui-resizable-handle {
+    background: #2196F3;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+}
+
+.ui-resizable-n { top: -5px; left: 50%; margin-left: -5px; }
+.ui-resizable-s { bottom: -5px; left: 50%; margin-left: -5px; }
+.ui-resizable-e { right: -5px; top: 50%; margin-top: -5px; }
+.ui-resizable-w { left: -5px; top: 50%; margin-top: -5px; }
+.ui-resizable-se { right: -5px; bottom: -5px; }
+.ui-resizable-sw { left: -5px; bottom: -5px; }
+.ui-resizable-nw { left: -5px; top: -5px; }
+.ui-resizable-ne { right: -5px; top: -5px; }
